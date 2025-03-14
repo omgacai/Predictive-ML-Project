@@ -1,13 +1,13 @@
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeRegressor
 
 #regression models
-
 regressor_model = RandomForestRegressor(n_estimators=100, random_state=42)
 
 
 #classifier models
-classifier_model = RandomForestClassifier(n_estimators=100, random_state=42)
+classifier_model = RandomForestClassifier(n_estimators=50, min_samples_split=4, random_state=42)
 
 '''
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
