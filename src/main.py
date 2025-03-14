@@ -1,41 +1,71 @@
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error, accuracy_score
 from data_loader import SQLiteLoader
+from type_stage_merger import PlantTypeStageMerger
 from data_cleaning import data_cleaning_pipeline
 from preprocess import preprocessor
-from model import model
+from model import regressor_model, classifier_model
 
 
 def main():
-    # load and clean the data first
+    # 1. standard load and clean data 
     clean_pipeline = Pipeline(steps=[
         ('loader', SQLiteLoader(db_path='data/agri.db')),
-        ('cleaner', data_cleaning_pipeline)
+        ('cleaner', data_cleaning_pipeline),
+        ('merger', PlantTypeStageMerger())
     ])
+
     clean_data = clean_pipeline.fit_transform(None)
-    
-    # Perform train-test split on cleaned data
+
     X = clean_data.drop('temperature_sensor_(°c)', axis=1)  
-    y = clean_data['temperature_sensor_(°c)']
-    y = y.fillna(y.median())
+    y_temp = clean_data['temperature_sensor_(°c)']
+    y_temp = y_temp.fillna(y_temp.median())
     
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+    # 2. Temperature
+    X_train, X_test, y_train_temp, y_test_temp = train_test_split(X, y_temp, test_size=0.2, random_state=0)
 
-    # preproccessing and model pipeline
-    model_pipeline = Pipeline(steps=[
+    regression_pipeline = Pipeline(steps=[
         ('preprocessor', preprocessor),
-        ('model', model)
+        ('model', regressor_model)  # Your regression model
     ])
-    
-    # Fit on training data
-    model_pipeline.fit(X_train, y_train)
-    
-    # Evaluate on test data
-    score = model_pipeline.score(X_test, y_test)
-    print(f"Model score: {score}")
-    
 
-    return model_pipeline, score, X_train, X_test, y_train, y_test
+    regression_pipeline.fit(X_train, y_train_temp)
+
+    # Make predictions for temperature (regression)
+    y_pred_temp = regression_pipeline.predict(X_test)
+
+    # Calculate the R^2 score for the regression model (temperature prediction)
+    temp_score = regression_pipeline.score(X_test, y_test_temp)
+
+
+    #3. Plant Type Stage
+    y_stage = clean_data['plant_type_stage']
+    # Train-test split for classification (plant type-stage)
+    X_train_stage, X_test_stage, y_train_stage, y_test_stage = train_test_split(X, y_stage, test_size=0.2, random_state=0)
+
+    # Plant type-stage classification model pipeline (classification)
+    classification_pipeline = Pipeline(steps=[
+        ('preprocessor', preprocessor),
+        ('model', classifier_model)  # Your classification model
+    ])
+
+    # Train the classification model (plant type-stage categorization)
+    classification_pipeline.fit(X_train_stage, y_train_stage)
+
+    # Make predictions for plant type-stage (classification)
+    y_pred_stage = classification_pipeline.predict(X_test_stage)
+    
+    
+    # Calculate accuracy score for the classification model (plant type-stage prediction)
+    stage_score = accuracy_score(y_test_stage, y_pred_stage)
+    
+    # Print the results
+    print(f"Temperature Prediction Model R^2 score: {temp_score}")
+    print(f"Plant Type-Stage Classification Model Accuracy: {stage_score}")
+    
+    return regression_pipeline, classification_pipeline, temp_score, stage_score, X_train, X_test, y_train_temp, y_test_temp, y_train_stage, y_test_stage
+
 
 if __name__ == "__main__":
     main()

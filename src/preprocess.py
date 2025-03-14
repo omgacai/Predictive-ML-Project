@@ -22,6 +22,7 @@ categorical_transformer = Pipeline(steps=[
     ('onehot', OneHotEncoder(handle_unknown='ignore'))
 ])
 
+
 preprocessor = ColumnTransformer(
     transformers=[
         ('num', numerical_transformer, numerical_cols),
