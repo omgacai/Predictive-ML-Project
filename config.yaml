@@ -12,11 +12,16 @@ preprocessing:
     encoder: "onehot"   # Options: "onehot", "label", "none"
     imputer: "most_frequent"  # Options: "most_frequent", "constant"
 
-
 regression_models:
   RandomForestRegressor:
     n_estimators: 100
     random_state: 42
+    max_depth: 10
+
+
+regression_param_grid:
+  model__n_estimators: [200, 300, 500]
+  model__max_depth: [None, 10, 20, 30]
 
 classification_models:
   RandomForestClassifier:

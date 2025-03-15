@@ -1,11 +1,12 @@
 import pandas as pd
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
 from data_loader import SQLiteLoader
 from type_stage_merger import PlantTypeStageMerger
 from data_cleaning import data_cleaning_pipeline
-from preprocess import preprocessor
+from preprocess import regression_preprocessor, classification_preprocessor
 from model import regression_models, classification_models
 from config import CONFIG
 
@@ -27,19 +28,37 @@ def prepare_regression_data(data, test_size, random_state, target_col='temperatu
 
 
 def train_regression_model(X_train, X_test, y_train, y_test):
-    """Train regression pipeline and evaluate performance."""
+    """Train regression models and evaluate performance with GridSearchCV."""
+
+    print(f"Training and evaluating model: RandomForestRegressor")
+
+    # Extract param_grid from the config file
+    param_grid = CONFIG['regression_param_grid']
+
+    # Create the pipeline
     pipeline = Pipeline(steps=[
-        ('preprocessor', preprocessor),
+        ('preprocessor', regression_preprocessor),  # Your preprocessor here
         ('model', regression_models)
     ])
-    pipeline.fit(X_train, y_train)
+
+    # Use GridSearchCV to search for the best parameters
+    grid_search = GridSearchCV(pipeline, param_grid, scoring='r2', n_jobs=-1, verbose=1)
     
+    
+    # Fit the model with GridSearchCV
+    grid_search.fit(X_train, y_train)
+    
+    # Get the best model and its performance
+    best_model = grid_search.best_estimator_
+
     # Evaluation
-    y_pred = pipeline.predict(X_test)
-    temp_score = pipeline.score(X_test, y_test)
+    y_pred = best_model.predict(X_test)
+    temp_score = best_model.score(X_test, y_test)
+
+    print(f"Best Model: {grid_search.best_params_}")
+    print(f"Best Model R^2 score on Test Data: {temp_score:.4f}")
     
-    print(f"Temperature Prediction Model R^2 score: {temp_score:.4f}")
-    return pipeline
+    return best_model
 
 
 def prepare_classification_data(data, test_size, random_state):
@@ -56,22 +75,32 @@ def prepare_classification_data(data, test_size, random_state):
 
     return train_test_split(X, y, test_size = test_size, random_state = random_state)
 
-
 def train_classification_model(X_train, X_test, y_train, y_test):
-    """Train classification pipeline and evaluate performance."""
-    pipeline = Pipeline(steps=[
-        ('preprocessor', preprocessor),
-        ('model', classification_models)
-    ])
-    pipeline.fit(X_train, y_train)
+    """Train multiple classification models and evaluate performance using train-test validation."""
 
-    # Predictions & Evaluation
-    #y_pred = pipeline.predict(X_test)
-    scores = cross_val_score(pipeline, X_train, y_train, cv=5)
+    for model_name, model in classification_models.items():
+        print(f"Training {model_name}...")
 
-    print(f"Plant Type-Stage Cross-validation scores: {scores}")
+        # Create a pipeline for each model
+        pipeline = Pipeline(steps=[
+            ('preprocessor', classification_preprocessor),  # Replace with your preprocessor
+            ('model', model)  # Use the model from the dictionary
+        ])
+        
+        # Fit the pipeline on the training data
+        pipeline.fit(X_train, y_train)
+        
+        # Make predictions on the test data
+        y_pred = pipeline.predict(X_test)
+        
+        # Evaluate performance on the test set
+        accuracy = accuracy_score(y_test, y_pred)
+        
+        # Print the results
+        print(f"Model: {model_name}")
+        print(f"Accuracy: {accuracy:.4f}\n")
+    
     return pipeline
-
 
 def main():
 

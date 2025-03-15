@@ -1,5 +1,8 @@
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
 from config import CONFIG
+
 
 #loading models
 
@@ -12,10 +15,15 @@ def get_models(model_config, model_type):
         else:
             raise ValueError(f"Unknown {model_type} model: {model_name}")
         
-    first_model_name = list(models.keys())[0] 
-    return models[first_model_name]
+    return models
 
 
-regression_models = get_models(CONFIG["regression_models"], "regression")
+#regression_models = get_models(CONFIG["regression_models"], "regression")
 
 classification_models = get_models(CONFIG["classification_models"], "classification")
+
+
+model_params = CONFIG['regression_models']['RandomForestRegressor']
+    
+# Create the model with parameters from the config file
+regression_models = RandomForestRegressor(**model_params)

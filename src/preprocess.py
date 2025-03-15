@@ -5,13 +5,22 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler, MinMaxScaler, O
 from config import CONFIG
 
 
-numerical_cols = [ 'humidity_sensor_(%)',
+r_numerical_cols = [ 'humidity_sensor_(%)',
        'light_intensity_sensor_(lux)', 'co2_sensor_(ppm)', 'ec_sensor_(ds/m)',
        'o2_sensor_(ppm)', 'nutrient_n_sensor_(ppm)', 'nutrient_p_sensor_(ppm)',
-       'nutrient_k_sensor_(ppm)', 'ph_sensor', 'water_level_sensor_(mm)',
-      
+       'nutrient_k_sensor_(ppm)', 'ph_sensor', 'water_level_sensor_(mm)',   
 ]
-categorical_cols = ['system_location_code', 'previous_cycle_plant_type']
+
+r_categorical_cols = ['system_location_code', 'previous_cycle_plant_type', 'plant_stage', 'plant_type']
+
+c_numerical_cols = [ 'humidity_sensor_(%)',
+       'light_intensity_sensor_(lux)', 'co2_sensor_(ppm)', 'ec_sensor_(ds/m)',
+       'o2_sensor_(ppm)', 'nutrient_n_sensor_(ppm)', 'nutrient_p_sensor_(ppm)',
+       'nutrient_k_sensor_(ppm)', 'ph_sensor', 'water_level_sensor_(mm)',  'temperature_sensor_(°c)'
+]
+
+c_categorical_cols = ['system_location_code', 'previous_cycle_plant_type']
+
 
 
 numerical_transformer = Pipeline(steps=[
@@ -30,10 +39,16 @@ categorical_transformer = Pipeline(steps=[
         else OrdinalEncoder())
 ])
 
-
-preprocessor = ColumnTransformer(
+regression_preprocessor = ColumnTransformer(
     transformers=[
-        ('num', numerical_transformer, numerical_cols),
-        ('cat', categorical_transformer, categorical_cols)
+        ('num', numerical_transformer, r_numerical_cols),
+        ('cat', categorical_transformer, r_categorical_cols)
+    ]
+)
+
+classification_preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', numerical_transformer, c_numerical_cols),
+        ('cat', categorical_transformer, c_categorical_cols)
     ]
 )
