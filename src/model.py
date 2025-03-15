@@ -1,30 +1,21 @@
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.tree import DecisionTreeRegressor
-
-#regression models
-regressor_model = RandomForestRegressor(n_estimators=100, random_state=42)
-
-#classifier models
-classifier_model = RandomForestClassifier(n_estimators=50, min_samples_split=4, random_state=42)
-
-'''
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+from config import CONFIG
 
-from sklearn.linear_model import LinearRegression, LogisticRegression
+#loading models
 
-#regression models
-regression_models = {
-        "Linear Regression": LinearRegression(),
-        "Random Forest Regressor": RandomForestRegressor(n_estimators=100, random_state=42)
-    }
+def get_models(model_config, model_type):
+    models = {}
+    for model_name, params in model_config.items():
+        model_class = globals().get(model_name)  
+        if model_class:
+            models[model_name] = model_class(**params)  
+        else:
+            raise ValueError(f"Unknown {model_type} model: {model_name}")
+        
+    first_model_name = list(models.keys())[0] 
+    return models[first_model_name]
 
 
-#classification models
-classification_models = {
-        "Logistic Regression": LogisticRegression(max_iter=1000),
-        "Random Forest Classifier": RandomForestClassifier(n_estimators=100, random_state=0)
-    }
+regression_models = get_models(CONFIG["regression_models"], "regression")
 
-
-'''
+classification_models = get_models(CONFIG["classification_models"], "classification")

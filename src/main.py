@@ -6,7 +6,7 @@ from data_loader import SQLiteLoader
 from type_stage_merger import PlantTypeStageMerger
 from data_cleaning import data_cleaning_pipeline
 from preprocess import preprocessor
-from model import regressor_model, classifier_model
+from model import regression_models, classification_models
 from config import CONFIG
 
 
@@ -30,7 +30,7 @@ def train_regression_model(X_train, X_test, y_train, y_test):
     """Train regression pipeline and evaluate performance."""
     pipeline = Pipeline(steps=[
         ('preprocessor', preprocessor),
-        ('model', regressor_model)
+        ('model', regression_models)
     ])
     pipeline.fit(X_train, y_train)
     
@@ -61,12 +61,12 @@ def train_classification_model(X_train, X_test, y_train, y_test):
     """Train classification pipeline and evaluate performance."""
     pipeline = Pipeline(steps=[
         ('preprocessor', preprocessor),
-        ('model', classifier_model)
+        ('model', classification_models)
     ])
     pipeline.fit(X_train, y_train)
 
     # Predictions & Evaluation
-    y_pred = pipeline.predict(X_test)
+    #y_pred = pipeline.predict(X_test)
     scores = cross_val_score(pipeline, X_train, y_train, cv=5)
 
     print(f"Plant Type-Stage Cross-validation scores: {scores}")
