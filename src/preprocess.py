@@ -12,7 +12,6 @@ numerical_cols = [ 'humidity_sensor_(%)',
 ]
 categorical_cols = ['system_location_code', 'previous_cycle_plant_type']
 
-#'plant_type','plant_stage']
 
 numerical_transformer = Pipeline(steps=[
     ('imputer', SimpleImputer(strategy='median'))

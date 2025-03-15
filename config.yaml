@@ -1,0 +1,28 @@
+data:
+  db_path: "data/agri.db"
+  test_size: 0.2
+  random_state: 42
+
+preprocessing:
+  numerical:
+    imputer: "median"  # Options: "mean", "median", "most_frequent"
+    scaler: "standard"  # Options: "standard", "minmax", "none"
+
+  categorical:
+    encoder: "onehot"   # Options: "onehot", "label", "none"
+    imputer: "most_frequent"  # Options: "most_frequent", "constant"
+
+
+regression_models:
+  LinearRegression:
+    normalize: false
+  RandomForestRegressor:
+    n_estimators: 100
+    random_state: 42
+
+classification_models:
+  LogisticRegression:
+    max_iter: 1000
+  RandomForestClassifier:
+    n_estimators: 100
+    random_state: 0

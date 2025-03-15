@@ -1,99 +1,91 @@
+import pandas as pd
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error, accuracy_score
-from data_loader import SQLiteLoader
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import LabelEncoder
+from data_loader import SQLiteLoader
 from type_stage_merger import PlantTypeStageMerger
 from data_cleaning import data_cleaning_pipeline
 from preprocess import preprocessor
 from model import regressor_model, classifier_model
-import pandas as pd
-from sklearn.model_selection import cross_val_score
+from config import CONFIG
 
 
+def load_and_clean_data(db_path):
+    """Load and clean data from SQLite database."""
+    pipeline = Pipeline(steps=[
+        ('loader', SQLiteLoader(db_path=db_path)),
+        ('cleaner', data_cleaning_pipeline)
+    ])
+    return pipeline.fit_transform(None)
+
+
+def prepare_regression_data(data, test_size, random_state, target_col='temperature_sensor_(°c)'):
+    """Prepare regression data (features and target)."""
+    X = data.drop(columns=[target_col])
+    y = data[target_col]
+    return train_test_split(X, y, test_size = test_size, random_state = random_state)
+
+
+def train_regression_model(X_train, X_test, y_train, y_test):
+    """Train regression pipeline and evaluate performance."""
+    pipeline = Pipeline(steps=[
+        ('preprocessor', preprocessor),
+        ('model', regressor_model)
+    ])
+    pipeline.fit(X_train, y_train)
+    
+    # Evaluation
+    y_pred = pipeline.predict(X_test)
+    temp_score = pipeline.score(X_test, y_test)
+    
+    print(f"Temperature Prediction Model R^2 score: {temp_score:.4f}")
+    return pipeline
+
+
+def prepare_classification_data(data, test_size, random_state):
+    """Prepare classification data by merging plant type and stage."""
+    pipeline = Pipeline(steps=[('merger', PlantTypeStageMerger())])
+    transformed_data = pipeline.fit_transform(data)
+
+    y = transformed_data['plant_type_stage']
+    X = transformed_data.drop(columns=['plant_type_stage', 'plant_type', 'plant_stage'])
+
+    # Encode labels
+    label_encoder = LabelEncoder()
+    y = label_encoder.fit_transform(y)
+
+    return train_test_split(X, y, test_size = test_size, random_state = random_state)
+
+
+def train_classification_model(X_train, X_test, y_train, y_test):
+    """Train classification pipeline and evaluate performance."""
+    pipeline = Pipeline(steps=[
+        ('preprocessor', preprocessor),
+        ('model', classifier_model)
+    ])
+    pipeline.fit(X_train, y_train)
+
+    # Predictions & Evaluation
+    y_pred = pipeline.predict(X_test)
+    scores = cross_val_score(pipeline, X_train, y_train, cv=5)
+
+    print(f"Plant Type-Stage Cross-validation scores: {scores}")
+    return pipeline
 
 
 def main():
-    # 1. load and clean the data first
-    clean_pipeline = Pipeline(steps=[
-        ('loader', SQLiteLoader(db_path='data/agri.db')),
-        ('cleaner', data_cleaning_pipeline)
-    ])
 
-    clean_data = clean_pipeline.fit_transform(None)
+    """Main function to run regression and classification models."""
+    print("\nLoading and cleaning data...")
+    clean_data = load_and_clean_data(CONFIG["data"]["db_path"])
 
-    
-    """TEMPERATURE REGRESSION"""
-    print("Running Temperature Regression Model...")
-    # Train-test split for regression (temperature)
-    X = clean_data.drop('temperature_sensor_(°c)', axis=1)  
-    y_temp = clean_data['temperature_sensor_(°c)']
-    y_temp = y_temp.fillna(y_temp.median())
-    
-    #Train-test split for regression (temperature)
-    X_train, X_test, y_train_temp, y_test_temp = train_test_split(X, y_temp, test_size=0.2, random_state=0)
+    print("\nRunning Temperature Regression Model...")
+    (X_train_temp, X_test_temp, y_train_temp, y_test_temp) = prepare_regression_data(clean_data, CONFIG["data"]["test_size"], CONFIG["data"]["random_state"])
+    train_regression_model(X_train_temp, X_test_temp, y_train_temp, y_test_temp)
 
-    regression_pipeline = Pipeline(steps=[
-        ('preprocessor', preprocessor),
-        ('model', regressor_model)  # Your regression model
-    ])
-
-    regression_pipeline.fit(X_train, y_train_temp)
-
-     # Make predictions for temperature (regression)
-    y_pred_temp = regression_pipeline.predict(X_test)
-    
-    # Calculate the R^2 score for the regression model (temperature prediction)
-    temp_score = regression_pipeline.score(X_test, y_test_temp)
-    
-    print(f"Temperature Prediction Model R^2 score: {temp_score}")
-
-
-    print("Running Plant Type Stage classification model...")
-
-    """PLANT_TYPE_STAGE CLASSIFICATION """
-    #Adding the new column for this analysis
-    merge_pipeline = Pipeline(steps=[('merger', PlantTypeStageMerger())])
-    plant_data = merge_pipeline.fit_transform(clean_data)
-
-    y_stage = plant_data['plant_type_stage']
-    label_encoder = LabelEncoder()
-
-    # categorical target data
-    y_stage = label_encoder.fit_transform(y_stage) 
-
-    X = plant_data.drop(['plant_type_stage', 'plant_type', 'plant_stage'], axis = 1)
-    # Train-test split for classification (plant type-stage)
-    X_train_stage, X_test_stage, y_train_stage, y_test_stage = train_test_split(X, y_stage, test_size=0.2, random_state=0)
-
-    
-    # Plant type-stage classification model pipeline (classification)
-    classification_pipeline = Pipeline(steps=[
-        ('preprocessor', preprocessor),
-        ('model', classifier_model)  # Your classification model
-    ])
-
-    
-    # Train the classification model (plant type-stage categorization)
-    classification_pipeline.fit(X_train_stage, y_train_stage)
-    
-    
-    # Make predictions for plant type-stage (classification)
-    y_pred_stage = classification_pipeline.predict(X_test_stage)
-
-    # Calculate accuracy score for the classification model (plant type-stage prediction)
-    #stage_score = accuracy_score(y_test_stage, y_pred_stage)
-
-    #cross validation
-    scores = cross_val_score(classification_pipeline, X_train_stage, y_train_stage, cv=5)
-    print("Plant Type Stage Cross-validation scores:", scores)
-    
-    
-    '''print(f"Plant Type-Stage Classification Model Accuracy: {stage_score}")'''
-
-    
-    return ""
-    #return regression_pipeline, classification_pipeline, temp_score, stage_score, X_train, X_test, y_train_temp, y_test_temp, y_train_stage, y_test_stage
+    print("\nRunning Plant Type-Stage Classification Model...\n")
+    (X_train_stage, X_test_stage, y_train_stage, y_test_stage) = prepare_classification_data(clean_data, CONFIG["data"]["test_size"], CONFIG["data"]["random_state"])
+    train_classification_model(X_train_stage, X_test_stage, y_train_stage, y_test_stage)
 
 
 if __name__ == "__main__":
