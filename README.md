@@ -17,8 +17,6 @@
 │   ├── main.py                       # Main script to train and test the model
 │   ├── config.py                     # Load config.yaml 
 ├── config.yaml                       # Configuration file with hyperparameters and model parameters
-├── results/
-│   ├── model_performance.csv         # File containing model evaluation results
 ├── README.md                        
 ├── run.sh                      
 └── requirements.txt
