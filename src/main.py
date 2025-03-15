@@ -1,6 +1,6 @@
 import pandas as pd
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
 from data_loader import SQLiteLoader
@@ -42,8 +42,7 @@ def train_regression_model(X_train, X_test, y_train, y_test):
     ])
 
     # Use GridSearchCV to search for the best parameters
-    grid_search = GridSearchCV(pipeline, param_grid, scoring='r2', n_jobs=-1, verbose=1)
-    
+    grid_search = RandomizedSearchCV(pipeline, param_distributions = param_grid, scoring='r2', n_iter=10, n_jobs=-1, verbose=1, cv = 2)
     
     # Fit the model with GridSearchCV
     grid_search.fit(X_train, y_train)
@@ -108,7 +107,7 @@ def main():
     print("\nLoading and cleaning data...")
     clean_data = load_and_clean_data(CONFIG["data"]["db_path"])
 
-    print("\nRunning Temperature Regression Model...")
+    print("\nRunning Temperature Regression Model...\n")
     (X_train_temp, X_test_temp, y_train_temp, y_test_temp) = prepare_regression_data(clean_data, CONFIG["data"]["test_size"], CONFIG["data"]["random_state"])
     train_regression_model(X_train_temp, X_test_temp, y_train_temp, y_test_temp)
 

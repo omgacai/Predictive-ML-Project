@@ -20,8 +20,8 @@ regression_models:
 
 
 regression_param_grid:
-  model__n_estimators: [200, 300, 500]
-  model__max_depth: [None, 10, 20, 30]
+  model__n_estimators: [250, 450, 650, 700]
+  model__max_depth: [null, 2, 4]
 
 classification_models:
   RandomForestClassifier:

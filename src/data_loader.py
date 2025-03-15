@@ -10,6 +10,7 @@ class SQLiteLoader(BaseEstimator, TransformerMixin):
         return self  # No fitting needed
 
     def transform(self, X=None):
+        print(f"Database file path: {self.db_path}")
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
