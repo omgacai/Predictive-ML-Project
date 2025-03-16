@@ -2,8 +2,6 @@ from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report, confusion_matrix, mean_absolute_error, mean_squared_error
 from data_loader import SQLiteLoader
-import matplotlib.pyplot as plt
-import seaborn as sns
 import pandas as pd
 from type_stage_merger import PlantTypeStageMerger
 from data_cleaning import data_cleaning_pipeline
@@ -44,7 +42,7 @@ def train_regression_model(X_train, X_test, y_train, y_test):
     ])
 
     rand_search = RandomizedSearchCV(pipeline, param_distributions=param_grid, 
-                                    scoring='r2', n_iter=10, n_jobs=-1, 
+                                    scoring='r2', n_iter=103, n_jobs=-1, 
                                     verbose=1, cv=5)
     
     rand_search.fit(X_train, y_train)
