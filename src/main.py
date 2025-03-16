@@ -1,4 +1,3 @@
-import pandas as pd
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV
 from sklearn.metrics import accuracy_score
@@ -19,8 +18,7 @@ def load_and_clean_data(db_path):
     ])
     return pipeline.fit_transform(None)
 
-
-def prepare_regression_data(data, test_size, random_state, target_col='temperature_sensor_(°c)'):
+def prepare_regression_data(data, test_size, random_state, target_col):
     """Prepare regression data (features and target)."""
     X = data.drop(columns=[target_col])
     y = data[target_col]
@@ -60,17 +58,13 @@ def train_regression_model(X_train, X_test, y_train, y_test):
     return best_model
 
 
-def prepare_classification_data(data, test_size, random_state):
+def prepare_classification_data(data, test_size, random_state, target):
     """Prepare classification data by merging plant type and stage."""
     pipeline = Pipeline(steps=[('merger', PlantTypeStageMerger())])
     transformed_data = pipeline.fit_transform(data)
 
-    y = transformed_data['plant_type_stage']
-    X = transformed_data.drop(columns=['plant_type_stage', 'plant_type', 'plant_stage'])
-
-    # Encode labels
-    label_encoder = LabelEncoder()
-    y = label_encoder.fit_transform(y)
+    y = transformed_data[target]
+    X = transformed_data.drop(columns=[target, 'plant_type', 'plant_stage'])
 
     return train_test_split(X, y, test_size = test_size, random_state = random_state)
 
@@ -86,13 +80,10 @@ def train_classification_model(X_train, X_test, y_train, y_test):
             ('model', model)  # Use the model from the dictionary
         ])
         
-        # Fit the pipeline on the training data
         pipeline.fit(X_train, y_train)
         
-        # Make predictions on the test data
         y_pred = pipeline.predict(X_test)
         
-        # Evaluate performance on the test set
         accuracy = accuracy_score(y_test, y_pred)
         
         # Print the results
@@ -108,11 +99,11 @@ def main():
     clean_data = load_and_clean_data(CONFIG["data"]["db_path"])
 
     print("\nRunning Temperature Regression Model...\n")
-    (X_train_temp, X_test_temp, y_train_temp, y_test_temp) = prepare_regression_data(clean_data, CONFIG["data"]["test_size"], CONFIG["data"]["random_state"])
+    (X_train_temp, X_test_temp, y_train_temp, y_test_temp) = prepare_regression_data(clean_data, CONFIG["data"]["test_size"], CONFIG["data"]["random_state"], CONFIG["regression"]["target"])
     train_regression_model(X_train_temp, X_test_temp, y_train_temp, y_test_temp)
 
     print("\nRunning Plant Type-Stage Classification Model...\n")
-    (X_train_stage, X_test_stage, y_train_stage, y_test_stage) = prepare_classification_data(clean_data, CONFIG["data"]["test_size"], CONFIG["data"]["random_state"])
+    (X_train_stage, X_test_stage, y_train_stage, y_test_stage) = prepare_classification_data(clean_data, CONFIG["data"]["test_size"], CONFIG["data"]["random_state"], CONFIG["classification"]["target"])
     train_classification_model(X_train_stage, X_test_stage, y_train_stage, y_test_stage)
 
 

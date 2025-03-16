@@ -1,5 +1,5 @@
 data:
-  db_path: "data/agri.db"
+  db_path: "data/calls.db"
   test_size: 0.2
   random_state: 42
 
@@ -21,9 +21,15 @@ regression_models:
 
 regression_param_grid:
   model__n_estimators: [250, 450, 650, 700]
-  model__max_depth: [null, 2, 4]
+  model__max_depth: [null]
 
 classification_models:
   RandomForestClassifier:
     n_estimators: 100
     random_state: 0
+
+regression:
+   target: "temperature_sensor_(°c)"
+  
+classification: 
+  target: "plant_type_stage"
