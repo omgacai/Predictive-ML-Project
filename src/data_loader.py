@@ -15,7 +15,11 @@ class SQLiteLoader(BaseEstimator, TransformerMixin):
 
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
         tables = cursor.fetchall()
-        table = tables[0][0]
+        if tables:
+            table = tables[0][0]
+            # Proceed with processing
+        else:
+            print("No tables found in the database.")
 
         df = pd.read_sql_query(f"SELECT * FROM {table}", conn)
         conn.close()
