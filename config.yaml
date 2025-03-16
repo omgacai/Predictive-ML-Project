@@ -1,5 +1,5 @@
 data:
-  db_path: "data/calls.db"
+  db_path: "data/agri.db"
   test_size: 0.2
   random_state: 42
 
@@ -18,18 +18,47 @@ regression_models:
     random_state: 42
     max_depth: 10
 
-
-regression_param_grid:
-  model__n_estimators: [250, 450, 650, 700]
-  model__max_depth: [null]
-
 classification_models:
   RandomForestClassifier:
     n_estimators: 100
-    random_state: 0
+    random_state: 42
+
+regression_param_grid:
+  model__n_estimators: [300]
+  model__max_depth: [null]
+
+class_param_grid:
+  model__n_estimators: [400]  # Number of trees in the forest
+  model__max_depth: [null]  # Maximum depth of each tree
+  model__min_samples_split: [2]  # Minimum number of samples to split a node 
 
 regression:
    target: "temperature_sensor_(°c)"
   
 classification: 
   target: "plant_type_stage"
+
+
+
+  
+#  KNeighborsClassifier:
+#     n_neighbors: 5
+#     weights: 'uniform'  # Options: 'uniform', 'distance', or a callable function
+#     algorithm: 'auto'   # Options: 'auto', 'ball_tree', 'kd_tree', 'brute'
+#     leaf_size: 30
+#     p: 2              # Power parameter for the Minkowski metric
+#     metric: 'minkowski'  # Options: 'minkowski', 'euclidean', 'manhattan', etc.
+#     metric_params: null
+#     n_jobs: null
+# LogisticRegression:
+#   penalty: 'l2'              # Regularization term; options: 'l1', 'l2', 'elasticnet', 'none'
+#   dual: False                # Dual or primal formulation; only for 'l2' penalty with 'liblinear' solver
+#   tol: 0.0001                # Tolerance for stopping criteria
+#   C: 1.0                     # Inverse of regularization strength; smaller values specify stronger regularization
+#   fit_intercept: True        # Whether to include an intercept in the model
+#   intercept_scaling: 1       # Scaling of intercept; useful when solver='liblinear' and fit_intercept=True
+#   solver: 'lbfgs'            # Algorithm to use for optimization; options: 'liblinear', 'newton-cg', 'sag', 'saga', 'lbfgs'
+#  max_iter: 100              # Maximum number of iterations for the solver to converge
+#    multi_class: 'ovr'         # Multiclass option; 'ovr' for one-vs-rest, 'multinomial' for multinomial loss
+#   verbose: 0                 # Level of verbosity; higher values provide more detailed logs
+  

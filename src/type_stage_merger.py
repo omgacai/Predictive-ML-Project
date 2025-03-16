@@ -19,4 +19,8 @@ class PlantTypeStageMerger(BaseEstimator, TransformerMixin):
         combined = self._combine_features(df)
         df['plant_type_stage'] = self.label_encoder.transform(combined)
         df = df.drop(columns=['plant_type', 'plant_stage'])
+
+        print("Labels Encoded: \n")
+        for index, label in enumerate(self.label_encoder.classes_):
+            print(f"Label {index}: {label}")
         return df

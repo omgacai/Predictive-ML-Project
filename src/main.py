@@ -1,8 +1,10 @@
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV
-from sklearn.metrics import accuracy_score
-from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report, confusion_matrix, mean_absolute_error, mean_squared_error
 from data_loader import SQLiteLoader
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
 from type_stage_merger import PlantTypeStageMerger
 from data_cleaning import data_cleaning_pipeline
 from preprocess import regression_preprocessor, classification_preprocessor
@@ -25,6 +27,8 @@ def prepare_regression_data(data, test_size, random_state, target_col):
     return train_test_split(X, y, test_size = test_size, random_state = random_state)
 
 
+
+
 def train_regression_model(X_train, X_test, y_train, y_test):
     """Train regression models and evaluate performance with GridSearchCV."""
 
@@ -39,24 +43,36 @@ def train_regression_model(X_train, X_test, y_train, y_test):
         ('model', regression_models)
     ])
 
-    # Use GridSearchCV to search for the best parameters
-    grid_search = RandomizedSearchCV(pipeline, param_distributions = param_grid, scoring='r2', n_iter=10, n_jobs=-1, verbose=1, cv = 2)
+    rand_search = RandomizedSearchCV(pipeline, param_distributions=param_grid, 
+                                    scoring='r2', n_iter=10, n_jobs=-1, 
+                                    verbose=1, cv=5)
     
-    # Fit the model with GridSearchCV
-    grid_search.fit(X_train, y_train)
+    rand_search.fit(X_train, y_train)
     
     # Get the best model and its performance
-    best_model = grid_search.best_estimator_
+    best_model = rand_search.best_estimator_
 
     # Evaluation
     y_pred = best_model.predict(X_test)
-    temp_score = best_model.score(X_test, y_test)
 
-    print(f"Best Model: {grid_search.best_params_}")
-    print(f"Best Model R^2 score on Test Data: {temp_score:.4f}")
+    #scores
+    r2_score = best_model.score(X_test, y_test)
+    mae = mean_absolute_error(y_test, y_pred)
+    mse = mean_squared_error(y_test, y_pred)
+  
+
+    print(f"\nBest Model: {rand_search.best_params_}")
+    print(f"Best Model R^2 score on Test Data: {r2_score:.4f}")
+    print(f"Mean Absolute Error (MAE): {mae:.4f}")
+    print(f"Mean Squared Error (MSE): {mse:.4f}")
+
+    metrics = {
+        'r2_score': r2_score,
+        'mae': mae,
+        'mse': mse
+    }
     
-    return best_model
-
+    return best_model, metrics
 
 def prepare_classification_data(data, test_size, random_state, target):
     """Prepare classification data by merging plant type and stage."""
@@ -64,33 +80,72 @@ def prepare_classification_data(data, test_size, random_state, target):
     transformed_data = pipeline.fit_transform(data)
 
     y = transformed_data[target]
-    X = transformed_data.drop(columns=[target, 'plant_type', 'plant_stage'])
+    X = transformed_data.drop(columns=[target])
 
     return train_test_split(X, y, test_size = test_size, random_state = random_state)
 
+
 def train_classification_model(X_train, X_test, y_train, y_test):
-    """Train multiple classification models and evaluate performance using train-test validation."""
-
-    for model_name, model in classification_models.items():
-        print(f"Training {model_name}...")
-
-        # Create a pipeline for each model
-        pipeline = Pipeline(steps=[
-            ('preprocessor', classification_preprocessor),  # Replace with your preprocessor
-            ('model', model)  # Use the model from the dictionary
-        ])
-        
-        pipeline.fit(X_train, y_train)
-        
-        y_pred = pipeline.predict(X_test)
-        
-        accuracy = accuracy_score(y_test, y_pred)
-        
-        # Print the results
-        print(f"Model: {model_name}")
-        print(f"Accuracy: {accuracy:.4f}\n")
+    """Train multiple classification models with hyperparameter tuning using RandomizedSearchCV."""
     
-    return pipeline
+    # Create a pipeline with a placeholder model
+    pipeline = Pipeline(steps=[
+        ('preprocessor', classification_preprocessor),  # Your preprocessing pipeline
+        ('model', classification_models)  # Your base model (will be replaced during tuning)
+    ])
+    
+    # Apply GridSearchCV
+    grid_search = GridSearchCV(
+        pipeline, 
+        CONFIG["class_param_grid"], 
+        cv=5,  # 5-fold cross-validation
+        scoring='f1_weighted',  
+        n_jobs=-1  # Use all available cores for speed
+        
+    )
+
+    # Fit GridSearchCV
+    grid_search.fit(X_train, y_train)
+    
+    # Get the best model from the search
+    best_pipeline = grid_search.best_estimator_
+    
+    # Predict using the best model
+    y_pred = best_pipeline.predict(X_test)
+    
+    # Evaluate performance
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred, average='weighted')
+    recall = recall_score(y_test, y_pred, average='weighted')
+    f1 = f1_score(y_test, y_pred, average='weighted')
+    
+    # Print the results
+    print(f"Best Parameters: {grid_search.best_params_}")
+    print(f"Accuracy: {accuracy:.4f}")
+    print(f"Precision: {precision:.4f}")
+    print(f"Recall: {recall:.4f}")
+    print(f"F1 Score: {f1:.4f}\n")
+    
+    # Print confusion matrix
+    print("Confusion Matrix:")
+    cm = confusion_matrix(y_test, y_pred)
+    print(cm)
+    
+    # Print detailed classification report
+    print("\nClassification Report:")
+    report = classification_report(y_test, y_pred)
+    print(report)
+    
+    # Store metrics in a dictionary
+    metrics = {
+        'accuracy': accuracy,
+        'precision': precision,
+        'recall': recall,
+        'f1': f1,
+    }
+    
+    return best_pipeline, metrics, grid_search.best_params_
+
 
 def main():
 
