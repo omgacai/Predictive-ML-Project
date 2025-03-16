@@ -82,9 +82,17 @@ Random Forest is an ensemble learning method that constructs multiple decision t
 ### Evaluation
 To fine-tune the hyperparameters, I first used a RandomizedSearchCV with certain parameters (can be edited in config.yaml). To narrow down the window I changed to using GridSearchCV on parameters close to the one obtained from RandomizedSearchCV. The best hyperparameters obtained with RandomForestRegression() is:
 
-Best Model: {'model__n_estimators': 700, 'model__max_depth': None}
+Best Paramerers: number of trees: 700, max depth of each tree: None}
 R²: 0.7011 
 
 
 ## ML Task 2: Categorising Plant Type-Stage
 ### Chosen Model: Random Forest
+Before testing, random forest stood out as similarly to the reason in ML task 1, it is effective in handling complex and non-linear relationships between features. Moreover, I tested out other models like Logistic Regression and KNeighborsClassifier which achieved a relatively lower accuracy score. Hence, after fine tuning the random forest classification model using grid search here are the best hyperparameters:
+
+Best Parameters: number of trees: 300, max depth of each tree: None, Min number of samples to split a node: 5
+
+
+# i. Other considerations for deploying the models 
+1. Time: While hypertuning the parameters, while a grid search will be more comprehensive as it goes through all the possible combinations, it is computationally expensive, and takes a long time to run especially for the regression model. More specifically, regression models use continuous targets which takes a longer time to tune as compared to classification models with discrete targets. Hence, I used the Randomised Search to tune the regression model and Grid Search for the classification model.
+2. Dataset fairly balanced: Dataset was found to be fairly balanced through EDA, making **random** cross-validation appropriate. While we could use fewer folds to save computational time, we opted for 3/5 folds to balance efficiency with reliable model evaluation.
