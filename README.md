@@ -1,8 +1,3 @@
-# aiip5-Yong-Sook-Mun-124H
-### Full name: Yong Sook Mun
-### Email address: yongsm1223@gmail.com
-
-
 # b. Folder Structure 
 ```plaintext
 ├── data/                             # Not pushed to git
